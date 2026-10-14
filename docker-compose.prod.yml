@@ -1,0 +1,50 @@
+# Production overrides for a single VPS:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# - Caddy terminates HTTPS (automatic Let's Encrypt certificates) for APP_DOMAIN.
+# - The SMTP receiver is published on port 25 (only needed for INBOUND_ADAPTERS containing "smtp";
+#   many cloud providers block inbound/outbound port 25 by default — check yours).
+# - For managed PostgreSQL / S3 / Redis, point DATABASE_URL, S3_*, REDIS_URL at them in .env and
+#   remove the corresponding services (or leave them unused).
+# See docs/DEPLOYMENT.md.
+
+services:
+  api:
+    ports: !reset []
+    environment:
+      ENVIRONMENT: production
+      TRUST_PROXY_HEADERS: "true"
+
+  worker:
+    environment:
+      ENVIRONMENT: production
+
+  beat:
+    environment:
+      ENVIRONMENT: production
+
+  smtp:
+    ports: !override
+      - "25:2525"
+    environment:
+      ENVIRONMENT: production
+
+  minio:
+    ports: !reset []
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on: [api]
+
+volumes:
+  caddydata:
+  caddyconfig:

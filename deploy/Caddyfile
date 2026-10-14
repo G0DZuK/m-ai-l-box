@@ -1,0 +1,27 @@
+{$APP_DOMAIN} {
+	encode zstd gzip
+	# Large uploads / inbound webhooks (keep in line with MAX_UPLOAD_BYTES / MAX_MESSAGE_BYTES)
+	request_body {
+		max_size 80MB
+	}
+	reverse_proxy api:8000 {
+		# Stream server-sent events immediately
+		flush_interval -1
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	log {
+		# Paths are logged, query strings are not used for secrets; download tokens are short-lived.
+		format filter {
+			wrap console
+			fields {
+				request>uri regexp ^/api/download/.* /api/download/[REDACTED]
+				request>headers>Authorization delete
+				request>headers>X-Mailbox-Token delete
+				request>headers>Cookie delete
+			}
+		}
+	}
+}
