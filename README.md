@@ -1,5 +1,7 @@
 # M-Ai-L Box
 
+[![CI](https://github.com/G0DZuK/m-ai-l-box/actions/workflows/ci.yml/badge.svg)](https://github.com/G0DZuK/m-ai-l-box/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 *Built for developers. Ready for testers.*
 
 M-Ai-L Box gives QA testers disposable e-mail addresses on **domains you own**, receives real mail sent to them, and shows it in a simple inbox: read the HTML safely, copy one-time codes, check the links, download attachments and the original `.eml`. Automated tests can wait for a message through an authenticated REST API.
