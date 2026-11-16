@@ -49,7 +49,7 @@ function ConfigGate() {
   const { config, error, loading, reload } = useConfigState();
   if (!config) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#f6f8fc] p-6 dark:bg-[#1f1f1f]">
         <div className="w-full max-w-md text-center">
           <p className="text-2xl font-bold text-slate-900 dark:text-white">M-Ai-L Box</p>
           {loading && (
@@ -289,7 +289,7 @@ function Shell() {
 
   return (
     <UiContext.Provider value={ui}>
-      <div className="flex h-[100dvh] flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="flex h-[100dvh] flex-col bg-[#f6f8fc] text-[#202124] dark:bg-[#1f1f1f] dark:text-[#e3e3e3]">
         <a
           href="#main"
           className="sr-only z-[70] rounded bg-indigo-600 px-3 py-2 text-white focus:not-sr-only focus:absolute focus:left-2 focus:top-2"
@@ -310,7 +310,7 @@ function Shell() {
           liveStatus={live.status}
         />
         <div className="flex min-h-0 flex-1">
-          <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:block" aria-label="Sidebar">
+          <aside className="hidden w-64 shrink-0 bg-[#f6f8fc] dark:bg-[#1f1f1f] lg:block" aria-label="Sidebar">
             <Sidebar view={view} onNavigate={(v) => go(v)} />
           </aside>
           {drawerOpen && (
@@ -321,12 +321,24 @@ function Shell() {
                 role="dialog"
                 aria-modal="true"
                 aria-label="Navigation"
-                className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl motion-safe:animate-[slideIn_160ms_ease-out] dark:bg-slate-900"
+                className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-[#f6f8fc] shadow-2xl motion-safe:animate-[slideIn_160ms_ease-out] dark:bg-[#1f1f1f]"
               >
-                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-                  <div>
-                    <div className="font-bold">{config.app_name || 'M-Ai-L Box'}</div>
-                    {config.tagline && <div className="text-xs text-slate-600 dark:text-slate-400">{config.tagline}</div>}
+                <div className="flex items-center justify-between border-b border-[#e0e0e0] px-4 py-3 dark:border-[#3c4043]">
+                  <div className="flex items-center gap-2">
+                    <img src="/logo-icon.png" alt="Logo" className="h-7 w-auto object-contain" />
+                    <div>
+                      <img
+                        src="/logo-text.png"
+                        alt={config.app_name || 'M-Ai-L Box'}
+                        className="h-4 w-auto object-contain dark:hidden"
+                      />
+                      <img
+                        src="/logo-text-dark.png"
+                        alt={config.app_name || 'M-Ai-L Box'}
+                        className="hidden h-4 w-auto object-contain dark:block"
+                      />
+                      {config.tagline && <div className="mt-0.5 text-[9px] font-medium text-[#1A73E8] dark:text-[#8ab4f8]">{config.tagline}</div>}
+                    </div>
                   </div>
                   <button type="button" className={iconBtn} onClick={() => setDrawerOpen(false)} aria-label="Close navigation menu">
                     <IconX />

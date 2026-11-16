@@ -1,9 +1,10 @@
 name = "mailbox-inbound"
 main = "worker.js"
 compatibility_date = "2024-11-01"
+workers_dev = false
 
 [vars]
 # Public HTTPS URL of your M-Ai-L Box deployment
-INBOUND_URL = "https://mail.example.com/api/inbound/raw"
+INBOUND_URL = "https://app.justjerri.dpdns.org/api/inbound/raw"
 
 # Set the shared secret with:  npx wrangler secret put INBOUND_WEBHOOK_SECRET

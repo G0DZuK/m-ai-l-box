@@ -16,7 +16,7 @@ import { IconFilter, IconHelp, IconLogOut, IconMenu, IconMoon, IconRefresh, Icon
 import { MailboxSettingsMenu } from './MailboxSettingsMenu';
 import { Menu, type MenuItem } from './Menu';
 import { SearchPanel } from './SearchPanel';
-import { btnPrimary, btnSmall, focusRing, iconBtn } from './ui';
+import { focusRing, iconBtn } from './ui';
 
 interface TopBarProps {
   onOpenDrawer: () => void;
@@ -61,43 +61,106 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
   const adv = advancedCount(search);
 
   return (
-    <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center gap-2 px-2 py-2 sm:px-3">
-        <button type="button" className={cx(iconBtn, 'lg:hidden')} onClick={onOpenDrawer} aria-label="Open navigation menu">
+    <header className="bg-[#f6f8fc] dark:bg-[#1f1f1f]">
+      {/* Main toolbar row */}
+      <div className="flex items-center gap-1 px-2 py-2">
+        {/* Hamburger */}
+        <button
+          type="button"
+          className={cx(iconBtn, 'lg:hidden')}
+          onClick={onOpenDrawer}
+          aria-label="Open navigation menu"
+        >
           <IconMenu />
         </button>
-        <div className="hidden min-w-0 shrink-0 flex-col pr-2 sm:flex lg:w-56">
-          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{config.app_name || 'M-Ai-L Box'}</span>
-          {config.tagline && <span className="hidden truncate text-[11px] text-slate-600 dark:text-slate-400 md:block">{config.tagline}</span>}
-        </div>
-        <span className="text-base font-bold text-slate-900 dark:text-white sm:hidden">{config.app_name || 'M-Ai-L Box'}</span>
 
-        <div ref={searchWrapRef} className="relative ml-auto hidden max-w-2xl flex-1 md:ml-0 md:block">
+        {/* Logo area — hidden on mobile, shown on sm+ */}
+        <div className="hidden shrink-0 items-center px-2 sm:flex">
+          <div className="flex items-center gap-3">
+            <a
+              href="#/inbox"
+              onClick={(e) => {
+                e.preventDefault();
+                ui.navigate('inbox');
+              }}
+              className="cursor-pointer outline-none transition-transform active:scale-95 py-0.5"
+              aria-label="Go to inbox"
+              title="M-Ai-L Box Home"
+            >
+              <img src="/logo-icon.png" alt="M-Ai-L Box Logo" className="h-9 w-auto object-contain shrink-0" />
+            </a>
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center tracking-tight text-[22px] font-bold leading-none font-sans select-none">
+                <span className="text-[#0d1b3e] dark:text-white">M-</span>
+                <span className="text-[#0070f3] dark:text-[#2997ff]">Ai</span>
+                <span className="text-[#0d1b3e] dark:text-white">-L Box</span>
+              </div>
+              {config.tagline && (
+                <div className="mt-1 flex items-center whitespace-nowrap text-[11px] font-normal leading-none tracking-normal select-none">
+                  <span className="text-slate-500 dark:text-slate-400">Built for&nbsp;</span>
+                  <span className="font-medium text-[#0070f3] dark:text-[#38bdf8]">developers</span>
+                  <span className="text-slate-500 dark:text-slate-400">.&nbsp;Ready for&nbsp;</span>
+                  <span className="font-medium text-[#0070f3] dark:text-[#38bdf8]">testers</span>
+                  <span className="text-slate-500 dark:text-slate-400">.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile logo + text */}
+        <div className="flex items-center gap-2 sm:hidden">
+          <a
+            href="#/inbox"
+            onClick={(e) => {
+              e.preventDefault();
+              ui.navigate('inbox');
+            }}
+            className="cursor-pointer outline-none transition-transform active:scale-95"
+            aria-label="Go to inbox"
+            title="M-Ai-L Box Home"
+          >
+            <img src="/logo-icon.png" alt="M-Ai-L Box Logo" className="h-7 w-auto object-contain shrink-0" />
+          </a>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center tracking-tight text-[17px] font-bold leading-none font-sans select-none">
+              <span className="text-[#0d1b3e] dark:text-white">M-</span>
+              <span className="text-[#0070f3] dark:text-[#2997ff]">Ai</span>
+              <span className="text-[#0d1b3e] dark:text-white">-L Box</span>
+            </div>
+            {config.tagline && (
+              <div className="mt-0.5 flex items-center whitespace-nowrap text-[9px] font-normal leading-none select-none">
+                <span className="text-slate-500 dark:text-slate-400">Built for&nbsp;</span>
+                <span className="font-medium text-[#0070f3] dark:text-[#38bdf8]">devs</span>
+                <span className="text-slate-500 dark:text-slate-400">.&nbsp;Ready for&nbsp;</span>
+                <span className="font-medium text-[#0070f3] dark:text-[#38bdf8]">testers</span>
+                <span className="text-slate-500 dark:text-slate-400">.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search bar — desktop */}
+        <div ref={searchWrapRef} className="relative ml-2 hidden max-w-2xl flex-1 md:block">
           <form
             role="search"
             onSubmit={(e) => {
               e.preventDefault();
               onSearch({ ...search, q });
             }}
-            className="flex items-center rounded-full bg-slate-100 pl-3 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500 dark:bg-slate-800 dark:focus-within:bg-slate-900"
+            className="flex items-center rounded-2xl bg-[#eaf1fb] pl-4 pr-2 h-12 focus-within:bg-white focus-within:shadow-md focus-within:ring-0 dark:bg-[#303134] dark:focus-within:bg-[#3c4043] transition-all"
           >
-            <IconSearch className="h-5 w-5 shrink-0 text-slate-500 dark:text-slate-400" />
-            <label htmlFor="mail-search" className="sr-only">
-              Search mail
-            </label>
+            <IconSearch className="h-5 w-5 shrink-0 text-[#5f6368] dark:text-[#9aa0a6]" />
+            <label htmlFor="mail-search" className="sr-only">Search mail</label>
             <input
               ref={searchInputRef}
               id="mail-search"
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.currentTarget.blur();
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === 'Escape') e.currentTarget.blur(); }}
               placeholder="Search mail  ( / )"
-              className="h-10 min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-400"
+              className="h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-[#202124] placeholder:text-[#5f6368] focus:outline-none focus:ring-0 dark:text-[#e3e3e3] dark:placeholder:text-[#9aa0a6]"
               autoComplete="off"
             />
             {(q || adv > 0) && (
@@ -105,17 +168,14 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
                 type="button"
                 className={iconBtn}
                 aria-label="Clear search"
-                onClick={() => {
-                  setQ('');
-                  onSearch(EMPTY_SEARCH);
-                }}
+                onClick={() => { setQ(''); onSearch(EMPTY_SEARCH); }}
               >
                 <IconX className="h-4 w-4" />
               </button>
             )}
             <button
               type="button"
-              className={cx(iconBtn, 'relative mr-1')}
+              className={cx(iconBtn, 'relative')}
               aria-label="Advanced search"
               aria-expanded={advancedOpen}
               title="Advanced search"
@@ -123,7 +183,7 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
             >
               <IconFilter className="h-5 w-5" />
               {adv > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 rounded-full bg-indigo-600 px-1 text-[10px] font-bold text-white dark:bg-indigo-400 dark:text-slate-950">
+                <span className="absolute -right-0.5 -top-0.5 rounded-full bg-[#1A73E8] px-1 text-[10px] font-bold text-white">
                   {adv}
                 </span>
               )}
@@ -136,6 +196,7 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
           )}
         </div>
 
+        {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-0.5">
           <LiveIndicator status={liveStatus} />
           <button type="button" className={iconBtn} onClick={onRefresh} aria-label="Refresh (r)" title="Refresh (r)" disabled={refreshing}>
@@ -161,23 +222,18 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
       <div ref={mobileWrapRef} className="relative px-2 pb-2 md:hidden">
         <form
           role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSearch({ ...search, q });
-          }}
-          className="flex items-center rounded-full bg-slate-100 pl-3 focus-within:ring-2 focus-within:ring-indigo-500 dark:bg-slate-800"
+          onSubmit={(e) => { e.preventDefault(); onSearch({ ...search, q }); }}
+          className="flex items-center rounded-2xl bg-[#eaf1fb] pl-4 pr-2 h-10 dark:bg-[#303134] transition-all"
         >
-          <IconSearch className="h-4 w-4 shrink-0 text-slate-500" />
-          <label htmlFor="mail-search-mobile" className="sr-only">
-            Search mail
-          </label>
+          <IconSearch className="h-4 w-4 shrink-0 text-[#5f6368]" />
+          <label htmlFor="mail-search-mobile" className="sr-only">Search mail</label>
           <input
             id="mail-search-mobile"
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search mail"
-            className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0 dark:text-slate-100"
+            className="h-full min-w-0 flex-1 border-0 bg-transparent px-2 text-sm text-[#202124] placeholder:text-[#5f6368] focus:outline-none focus:ring-0 dark:text-[#e3e3e3]"
             autoComplete="off"
           />
           <button
@@ -212,9 +268,14 @@ function LiveIndicator({ status }: { status: LiveStatus }) {
         : status === 'connecting'
           ? 'Connecting for live updates…'
           : 'Reconnecting live updates…';
-  const dot = status === 'live' ? 'bg-emerald-500' : status === 'polling' ? 'bg-amber-500' : 'bg-slate-400 motion-safe:animate-pulse';
+  const dot =
+    status === 'live'
+      ? 'bg-[#1e8e3e]'
+      : status === 'polling'
+        ? 'bg-[#f9ab00]'
+        : 'bg-[#9aa0a6] motion-safe:animate-pulse';
   return (
-    <span className="mr-1 hidden items-center gap-1.5 rounded-full px-2 py-1 text-xs text-slate-600 dark:text-slate-400 lg:inline-flex" title={text}>
+    <span className="mr-1 hidden items-center gap-1.5 rounded-full px-2 py-1 text-xs text-[#5f6368] dark:text-[#9aa0a6] lg:inline-flex" title={text}>
       <span className={cx('h-2 w-2 rounded-full', dot)} aria-hidden="true" />
       <span>{status === 'live' ? 'Live' : status === 'polling' ? 'Polling' : 'Connecting'}</span>
       <span className="sr-only">{text}</span>
@@ -236,13 +297,13 @@ function ActiveAddressBar() {
     : `Temporary mailbox · deleted with all messages when it expires`;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950/40 sm:px-4">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[#e0e0e0] bg-white px-4 py-2 dark:border-[#3c4043] dark:bg-[#2d2e30] sm:px-5">
       <div className="flex min-w-0 max-w-full items-center gap-2">
         <span className="sr-only">Active address:</span>
         <span
           className={cx(
             'min-w-0 truncate font-mono text-base font-semibold sm:text-lg',
-            active.gone ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white',
+            active.gone ? 'text-[#9aa0a6] line-through' : 'text-[#202124] dark:text-[#e3e3e3]',
           )}
           title={active.address}
         >
@@ -251,15 +312,15 @@ function ActiveAddressBar() {
         <CopyButton text={active.address} label="Copy" ariaLabel="Copy e-mail address" />
         <MailboxSettingsMenu key={active.id} mailbox={active} />
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-600 dark:text-slate-400">
-        {active.label && <span className="font-medium text-slate-800 dark:text-slate-200">{active.label}</span>}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+        {active.label && <span className="font-medium text-[#202124] dark:text-[#e3e3e3]">{active.label}</span>}
         {active.gone ? (
-          <span className="font-semibold text-red-700 dark:text-red-300">Expired or removed</span>
+          <span className="font-semibold text-red-600 dark:text-red-400">Expired or removed</span>
         ) : active.saved ? (
           <span>No expiry</span>
         ) : (
           <span
-            className={cx(exp.soon || exp.expired ? 'font-semibold text-amber-800 dark:text-amber-300' : undefined)}
+            className={cx(exp.soon || exp.expired ? 'font-semibold text-amber-700 dark:text-amber-400' : undefined)}
             title={active.expires_at ? `Expires ${formatFull(active.expires_at)}` : undefined}
           >
             {exp.text}
@@ -267,8 +328,8 @@ function ActiveAddressBar() {
         )}
         <span className="hidden sm:inline">{retention}</span>
         <span className="hidden md:inline">Trash emptied after {config.trash_retention_days} days</span>
-        {active.is_demo && <span className="font-semibold text-fuchsia-700 dark:text-fuchsia-300">Demo mailbox</span>}
-        <button type="button" className={cx('rounded text-indigo-700 underline-offset-2 hover:underline dark:text-indigo-300', focusRing)} onClick={ui.openHelp}>
+        {active.is_demo && <span className="font-semibold text-fuchsia-700 dark:text-fuchsia-400">Demo mailbox</span>}
+        <button type="button" className={cx('rounded text-[#1A73E8] underline-offset-2 hover:underline dark:text-[#8ab4f8]', focusRing)} onClick={ui.openHelp}>
           How it works
         </button>
       </div>
@@ -285,14 +346,13 @@ function AccountMenu() {
   if (!session.signedIn) {
     return (
       <div className="ml-1 flex items-center gap-1">
-        <button type="button" className={cx(btnPrimary, 'px-3 py-1.5')} onClick={() => ui.openAuth('signin')}>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#dadce0] bg-white px-4 py-1.5 text-sm font-medium text-[#1A73E8] shadow-sm hover:bg-[#f6f8fc] dark:border-[#5f6368] dark:bg-[#2d2e30] dark:text-[#8ab4f8] dark:hover:bg-[#37393b]"
+          onClick={() => ui.openAuth('signin')}
+        >
           Sign in
         </button>
-        {config.registration_open && (
-          <button type="button" className={cx(btnSmall, 'hidden py-1.5 sm:inline-flex')} onClick={() => ui.openAuth('register')}>
-            Create account
-          </button>
-        )}
       </div>
     );
   }
@@ -311,12 +371,12 @@ function AccountMenu() {
   return (
     <Menu
       triggerLabel={`Account menu for ${session.user?.email ?? ''}`}
-      triggerClassName={cx('ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white dark:bg-indigo-400 dark:text-slate-950', focusRing)}
+      triggerClassName={cx('ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#1A73E8] text-sm font-bold text-white dark:bg-[#8ab4f8] dark:text-[#202124]', focusRing)}
       trigger={<span aria-hidden="true">{initial}</span>}
       items={items}
       header={
         <div className="space-y-2">
-          <div className="truncate text-sm font-medium text-slate-900 dark:text-white">{session.user?.email}</div>
+          <div className="truncate text-sm font-medium text-[#202124] dark:text-[#e3e3e3]">{session.user?.email}</div>
           {usage && (
             <UsageBar
               used={usage.used_bytes}

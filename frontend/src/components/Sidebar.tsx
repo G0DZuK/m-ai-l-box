@@ -22,7 +22,7 @@ import {
   IconUser,
   IconX,
 } from './Icons';
-import { btnPrimary, btnSecondary, focusRing, iconBtnSm } from './ui';
+import { focusRing, iconBtnSm } from './ui';
 
 interface SidebarProps {
   view: View;
@@ -36,6 +36,7 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
   const ui = useUi();
   const unread = active?.info?.unread_count ?? 0;
 
+  // Gmail-style pill nav item
   const nav = (v: View, text: string, icon: ReactNode, count?: number) => (
     <li>
       <a
@@ -46,17 +47,20 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
         }}
         aria-current={view === v ? 'page' : undefined}
         className={cx(
-          'flex items-center gap-3 rounded-r-full py-2 pl-4 pr-3 text-sm',
+          'flex items-center gap-4 rounded-r-full py-1.5 pl-4 pr-4 text-sm font-medium transition-colors',
           focusRing,
           view === v
-            ? 'bg-indigo-100 font-semibold text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-100'
-            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
+            ? 'bg-[#D3E3FD] text-[#001D35] dark:bg-[#004A77] dark:text-[#C2E7FF]'
+            : 'text-[#202124] hover:bg-[#e8eaed] dark:text-[#e3e3e3] dark:hover:bg-[#3c4043]',
         )}
       >
-        <span className="shrink-0">{icon}</span>
-        <span className="flex-1">{text}</span>
+        <span className="shrink-0 text-[#444746] dark:text-[#9aa0a6]">{icon}</span>
+        <span className="flex-1" style={{ fontFamily: "'Google Sans', sans-serif" }}>{text}</span>
         {count !== undefined && count > 0 && (
-          <span className="text-xs font-semibold" aria-label={`${count} unread`}>
+          <span
+            className="text-xs font-semibold text-[#202124] dark:text-[#e3e3e3]"
+            aria-label={`${count} unread`}
+          >
             {count > 999 ? '999+' : count}
           </span>
         )}
@@ -65,29 +69,46 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
   );
 
   return (
-    <nav aria-label="Main" className="flex h-full flex-col overflow-y-auto pb-4">
-      <div className="space-y-2 px-3 pt-3">
-        <button type="button" className={cx(btnPrimary, 'w-full justify-start rounded-2xl py-3 text-base')} onClick={ui.openCreate}>
+    <nav aria-label="Main" className="flex h-full flex-col overflow-y-auto pb-4 bg-[#f6f8fc] dark:bg-[#1f1f1f]">
+      {/* Compose / Create button — Gmail pill style */}
+      <div className="px-2 pt-4 pb-2">
+        <button
+          type="button"
+          onClick={ui.openCreate}
+          className={cx(
+            'flex items-center gap-3 rounded-2xl bg-[#C2E7FF] px-5 py-4 text-sm font-medium text-[#001D35] shadow-md transition-all hover:bg-[#A8D7FF] hover:shadow-lg dark:bg-[#004A77] dark:text-[#C2E7FF] dark:hover:bg-[#005C8F]',
+            focusRing,
+          )}
+        >
           <IconPlus />
-          Create new mailbox
+          <span style={{ fontFamily: "'Google Sans', sans-serif" }}>Create new mailbox</span>
         </button>
         {config.demo_mode && (
-          <button type="button" className={cx(btnSecondary, 'w-full justify-start rounded-2xl')} onClick={ui.startDemo}>
+          <button
+            type="button"
+            className={cx(
+              'mt-2 flex w-full items-center gap-3 rounded-2xl border border-[#dadce0] bg-white px-4 py-2 text-sm font-medium text-[#444746] shadow-sm hover:bg-[#f6f8fc] dark:border-[#5f6368] dark:bg-[#2d2e30] dark:text-[#c4c7c5] dark:hover:bg-[#37393b]',
+              focusRing,
+            )}
+            onClick={ui.startDemo}
+          >
             <IconMail className="h-4 w-4" />
             Try demo mailbox
           </button>
         )}
       </div>
 
-      <ul className="mt-4 space-y-0.5 pr-3">
+      {/* Primary nav */}
+      <ul className="mt-1 space-y-0.5 pr-3">
         {nav('inbox', 'Inbox', <IconInbox />, unread)}
         {nav('starred', 'Starred', <IconStar />)}
         {nav('attachments', 'Attachments', <IconPaperclip />)}
         {nav('trash', 'Trash', <IconTrash />)}
       </ul>
 
+      {/* Account nav (signed-in only) */}
       {signedIn && (
-        <ul className="mt-3 space-y-0.5 border-t border-slate-200 pr-3 pt-3 dark:border-slate-800">
+        <ul className="mt-2 space-y-0.5 border-t border-[#e0e0e0] pr-3 pt-2 dark:border-[#3c4043]">
           {nav('files', 'My files', <IconFolder />)}
           {nav('api-keys', 'API keys', <IconKey />)}
           {nav('account', 'Account', <IconUser />)}
@@ -97,8 +118,16 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
 
       <MailboxSwitcher />
 
-      <div className="mt-auto px-3 pt-4">
-        <button type="button" className={cx('flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800', focusRing)} onClick={ui.openHelp}>
+      {/* Help link at bottom */}
+      <div className="mt-auto px-2 pt-4">
+        <button
+          type="button"
+          className={cx(
+            'flex w-full items-center gap-3 rounded-full px-4 py-2 text-sm text-[#5f6368] hover:bg-[#e8eaed] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]',
+            focusRing,
+          )}
+          onClick={ui.openHelp}
+        >
           <IconHelp className="h-4 w-4" />
           How mailboxes work
         </button>
@@ -115,15 +144,23 @@ function MailboxSwitcher() {
   const headingId = useId();
 
   return (
-    <section aria-labelledby={headingId} className="mt-4 border-t border-slate-200 px-3 pt-3 dark:border-slate-800">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h2 id={headingId} className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+    <section
+      aria-labelledby={headingId}
+      className="mt-2 border-t border-[#e0e0e0] px-2 pt-3 dark:border-[#3c4043]"
+    >
+      <div className="mb-2 flex items-center justify-between px-2">
+        <h2
+          id={headingId}
+          className="text-xs font-semibold uppercase tracking-wide text-[#5f6368] dark:text-[#9aa0a6]"
+          style={{ fontFamily: "'Google Sans', sans-serif" }}
+        >
           Mailboxes
         </h2>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{mailboxes.length}</span>
+        <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">{mailboxes.length}</span>
       </div>
+
       {mailboxes.length === 0 ? (
-        <p className="px-1 text-xs text-slate-600 dark:text-slate-400">No mailboxes in this browser yet.</p>
+        <p className="px-2 text-xs text-[#5f6368] dark:text-[#9aa0a6]">No mailboxes in this browser yet.</p>
       ) : (
         <ul className="space-y-1">
           {mailboxes.map((m) => {
@@ -140,39 +177,53 @@ function MailboxSwitcher() {
                   }}
                   aria-current={isActive ? 'true' : undefined}
                   className={cx(
-                    'w-full rounded-lg border px-2.5 py-2 pr-8 text-left',
+                    'w-full rounded-r-full px-3 py-2 pr-8 text-left transition-colors',
                     focusRing,
                     isActive
-                      ? 'border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-500/15'
-                      : 'border-transparent hover:bg-slate-100 dark:hover:bg-slate-800',
+                      ? 'bg-[#D3E3FD] dark:bg-[#004A77]'
+                      : 'hover:bg-[#e8eaed] dark:hover:bg-[#3c4043]',
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <span className={cx('min-w-0 flex-1 truncate font-mono text-xs', m.gone ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-slate-100')}>
+                    <span
+                      className={cx(
+                        'min-w-0 flex-1 truncate font-mono text-xs',
+                        m.gone ? 'text-[#9aa0a6] line-through' : 'text-[#202124] dark:text-[#e3e3e3]',
+                      )}
+                    >
                       {m.address}
                     </span>
                     {unread > 0 && !m.gone && (
-                      <span className="rounded-full bg-indigo-600 px-1.5 text-[11px] font-bold text-white dark:bg-indigo-400 dark:text-slate-950" aria-label={`${unread} unread`}>
+                      <span
+                        className="rounded-full bg-[#1A73E8] px-1.5 text-[11px] font-bold text-white dark:bg-[#8ab4f8] dark:text-[#202124]"
+                        aria-label={`${unread} unread`}
+                      >
                         {unread > 99 ? '99+' : unread}
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-600 dark:text-slate-400">
-                    {m.label && <span className="truncate font-medium text-slate-700 dark:text-slate-300">{m.label}</span>}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">
+                    {m.label && <span className="truncate font-medium text-[#202124] dark:text-[#e3e3e3]">{m.label}</span>}
                     {m.gone ? (
-                      <span className="font-semibold text-red-700 dark:text-red-300">Expired or removed</span>
+                      <span className="font-semibold text-red-600 dark:text-red-400">Expired or removed</span>
                     ) : m.saved ? (
                       <span>Saved{m.token ? '' : ' · account only'}</span>
                     ) : (
-                      <span className={exp.soon || exp.expired ? 'font-semibold text-amber-700 dark:text-amber-300' : undefined}>{exp.text}</span>
+                      <span className={exp.soon || exp.expired ? 'font-semibold text-amber-700 dark:text-amber-400' : undefined}>
+                        {exp.text}
+                      </span>
                     )}
-                    {m.is_demo && <span className="font-semibold text-fuchsia-700 dark:text-fuchsia-300">Demo</span>}
+                    {m.is_demo && <span className="font-semibold text-fuchsia-700 dark:text-fuchsia-400">Demo</span>}
                   </div>
                 </button>
                 {m.token && (
                   <button
                     type="button"
-                    className={cx(iconBtnSm, 'absolute right-1 top-1.5', !m.gone && 'opacity-60 group-hover:opacity-100 focus-visible:opacity-100')}
+                    className={cx(
+                      iconBtnSm,
+                      'absolute right-1 top-1.5',
+                      !m.gone && 'opacity-60 group-hover:opacity-100 focus-visible:opacity-100',
+                    )}
                     aria-label={`Remove ${m.address} from this browser`}
                     title="Remove from this browser"
                     onClick={() => setRemoving(m)}
@@ -185,7 +236,15 @@ function MailboxSwitcher() {
           })}
         </ul>
       )}
-      <button type="button" className={cx(btnSecondary, 'mt-2 w-full text-xs')} onClick={ui.openExisting}>
+
+      <button
+        type="button"
+        className={cx(
+          'mt-2 flex w-full items-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 py-1.5 text-xs text-[#444746] shadow-sm hover:bg-[#f6f8fc] dark:border-[#5f6368] dark:bg-[#2d2e30] dark:text-[#c4c7c5] dark:hover:bg-[#37393b]',
+          focusRing,
+        )}
+        onClick={ui.openExisting}
+      >
         <IconKey className="h-4 w-4" />
         Open existing mailbox
       </button>

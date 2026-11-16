@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState, type ReactNode } from 'react';
 import { ApiError, errorMessage, isAbort } from '../api/client';
 import * as api from '../api/endpoints';
-import type { Address, HtmlBody, MessageDetail, MessageSummary, RawSource } from '../api/types';
+import type { HtmlBody, MessageDetail, MessageSummary, RawSource } from '../api/types';
 import { AttachmentCard, useAttachmentActions } from '../components/AttachmentCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CopyButton } from '../components/CopyButton';
@@ -27,7 +27,7 @@ import { useMailboxes } from '../context/MailboxContext';
 import { useToast } from '../context/ToastContext';
 import { cx } from '../lib/cx';
 import { triggerDownload } from '../lib/download';
-import { describeDateDelta, formatBytes, formatFull } from '../lib/format';
+import { formatBytes, formatFull } from '../lib/format';
 
 type BodyTab = 'html' | 'text' | 'headers' | 'source';
 
@@ -41,9 +41,7 @@ interface ReaderProps {
   mailboxId: string;
   messageId: string;
   onBack: () => void;
-  /** Called whenever the message's flags change, so the list can update. */
   onUpdated: (summary: MessageSummary) => void;
-  /** Called after the message was moved to Trash, restored or deleted (it left the current folder). */
   onRemoved: (id: string) => void;
 }
 
@@ -64,9 +62,9 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
   const [raw, setRaw] = useState<RawSource | null>(null);
   const [rawError, setRawError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const attachmentActions = useAttachmentActions(mailboxId);
 
-  // Load the message; mark it read on open.
   useEffect(() => {
     const ctrl = new AbortController();
     setDetail(null);
@@ -76,6 +74,7 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
     setRaw(null);
     setRawError(null);
     setRemoteImages(false);
+    setShowDetails(false);
     api
       .getMessage(mailboxId, messageId, ctrl.signal)
       .then((d) => {
@@ -94,13 +93,13 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
       })
       .catch((e) => {
         if (isAbort(e)) return;
-        if (e instanceof ApiError && e.status === 404) setError('This message no longer exists. It may have been deleted or the mailbox expired.');
+        if (e instanceof ApiError && e.status === 404)
+          setError('This message no longer exists. It may have been deleted or the mailbox expired.');
         else setError(errorMessage(e));
       });
     return () => ctrl.abort();
   }, [mailboxId, messageId, attempt]);
 
-  // Load the sanitised HTML body when needed.
   useEffect(() => {
     if (!detail || !detail.has_html || tab !== 'html') return;
     if (html && html.remote === remoteImages) return;
@@ -109,13 +108,10 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
     api
       .getMessageHtml(mailboxId, detail.id, remoteImages, ctrl.signal)
       .then((body) => setHtml({ body, remote: remoteImages }))
-      .catch((e) => {
-        if (!isAbort(e)) setHtmlError(errorMessage(e));
-      });
+      .catch((e) => { if (!isAbort(e)) setHtmlError(errorMessage(e)); });
     return () => ctrl.abort();
   }, [detail, tab, remoteImages, mailboxId, html, htmlAttempt]);
 
-  // Load the raw source lazily.
   useEffect(() => {
     if (!detail || tab !== 'source' || raw) return;
     const ctrl = new AbortController();
@@ -123,9 +119,7 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
     api
       .getMessageRaw(mailboxId, detail.id, ctrl.signal)
       .then(setRaw)
-      .catch((e) => {
-        if (!isAbort(e)) setRawError(errorMessage(e));
-      });
+      .catch((e) => { if (!isAbort(e)) setRawError(errorMessage(e)); });
     return () => ctrl.abort();
   }, [detail, tab, raw, mailboxId]);
 
@@ -134,7 +128,8 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
       if (!detail) return;
       try {
         const s = await api.patchMessage(mailboxId, detail.id, body);
-        if (body.is_read !== undefined && body.is_read !== detail.is_read) adjustUnread(mailboxId, body.is_read ? -1 : 1);
+        if (body.is_read !== undefined && body.is_read !== detail.is_read)
+          adjustUnread(mailboxId, body.is_read ? -1 : 1);
         setDetail((cur) => (cur ? { ...cur, ...s } : cur));
         onUpdated(s);
       } catch (e) {
@@ -151,9 +146,7 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
   const markRead = useCallback(
     (read: boolean) => {
       if (!detail) return;
-      void patch({ is_read: read }).then(() => {
-        if (!read) onBack();
-      });
+      void patch({ is_read: read }).then(() => { if (!read) onBack(); });
     },
     [detail, patch, onBack],
   );
@@ -206,16 +199,17 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
     return (
       <div className="space-y-4 p-6" aria-busy="true">
         <span className="sr-only">Loading message</span>
-        <div className="h-7 w-2/3 rounded bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
-        <div className="h-4 w-1/3 rounded bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
-        <div className="h-4 w-1/2 rounded bg-slate-200 motion-safe:animate-pulse dark:bg-slate-800" />
-        <div className="h-64 rounded bg-slate-100 motion-safe:animate-pulse dark:bg-slate-800/60" />
+        <div className="h-7 w-2/3 rounded bg-[#e8eaed] motion-safe:animate-pulse dark:bg-[#3c4043]" />
+        <div className="h-4 w-1/3 rounded bg-[#e8eaed] motion-safe:animate-pulse dark:bg-[#3c4043]" />
+        <div className="h-4 w-1/2 rounded bg-[#e8eaed] motion-safe:animate-pulse dark:bg-[#3c4043]" />
+        <div className="h-64 rounded bg-[#f1f3f4] motion-safe:animate-pulse dark:bg-[#3c4043]" />
       </div>
     );
   }
 
-  const delta = describeDateDelta(detail.received_at, detail.sent_at);
   const visibleAttachments = detail.attachments;
+  const hasCodes = detail.otp_codes.length > 0;
+  const hasLinks = detail.links.length > 0;
 
   const tabs: Array<{ id: BodyTab; label: string; icon: ReactNode; show: boolean }> = [
     { id: 'html', label: 'HTML', icon: <IconCode className="h-4 w-4" />, show: detail.has_html },
@@ -225,112 +219,210 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
   ];
 
   return (
-    <article className="flex min-h-full flex-col" aria-labelledby="reader-subject">
-      {/* Toolbar */}
-      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white/95 px-2 py-1.5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+    <article className="flex min-h-full flex-col bg-white dark:bg-[#2d2e30]" aria-labelledby="reader-subject">
+      {/* ── Toolbar ── */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-[#e0e0e0] bg-white/95 px-2 py-1 backdrop-blur dark:border-[#3c4043] dark:bg-[#2d2e30]/95">
         <button type="button" className={iconBtn} onClick={onBack} aria-label="Back to list (u)" title="Back to list (u)">
           <IconArrowLeft />
         </button>
-        <span className="mx-1 h-6 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
+        <span className="mx-1 h-5 w-px bg-[#e0e0e0] dark:bg-[#5f6368]" aria-hidden="true" />
         <button
           type="button"
           className={iconBtn}
           onClick={toggleStar}
           aria-pressed={detail.is_starred}
-          aria-label={detail.is_starred ? 'Unstar (s)' : 'Star (s)'}
-          title={detail.is_starred ? 'Unstar (s)' : 'Star (s)'}
+          aria-label={detail.is_starred ? 'Unstar' : 'Star'}
+          title={detail.is_starred ? 'Unstar' : 'Star'}
         >
-          <IconStar filled={detail.is_starred} className={cx('h-5 w-5', detail.is_starred && 'text-amber-500')} />
+          <IconStar filled={detail.is_starred} className={cx('h-5 w-5', detail.is_starred && 'text-[#f9ab00]')} />
         </button>
-        <button type="button" className={iconBtn} onClick={() => markRead(false)} aria-label="Mark as unread (Shift+U)" title="Mark as unread (Shift+U)">
+        <button type="button" className={iconBtn} onClick={() => markRead(false)} aria-label="Mark as unread" title="Mark as unread">
           <IconMailOpen />
         </button>
         <button
           type="button"
           className={iconBtn}
           onClick={() => void trash()}
-          aria-label={detail.in_trash ? 'Restore from Trash' : 'Move to Trash (#)'}
-          title={detail.in_trash ? 'Restore from Trash' : 'Move to Trash (#)'}
+          aria-label={detail.in_trash ? 'Restore from Trash' : 'Move to Trash'}
+          title={detail.in_trash ? 'Restore from Trash' : 'Move to Trash'}
         >
           {detail.in_trash ? <IconRestore /> : <IconTrash />}
         </button>
         <button type="button" className={iconBtn} onClick={() => setConfirmDelete(true)} aria-label="Delete forever" title="Delete forever">
           <IconX />
         </button>
-        <span className="mx-1 h-6 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
-        <button type="button" className={cx(btnSmall, 'mr-1')} onClick={() => void downloadEml()}>
+        <span className="mx-1 h-5 w-px bg-[#e0e0e0] dark:bg-[#5f6368]" aria-hidden="true" />
+        {/* Developer tools — small, tucked away */}
+        <button type="button" className={cx(btnSmall, 'text-xs text-[#5f6368]')} onClick={() => void downloadEml()}>
           <IconDownload className="h-3.5 w-3.5" />
           .eml
         </button>
-        <button type="button" className={cx(btnSmall, 'mr-1 hidden sm:inline-flex')} onClick={() => setTab('source')}>
-          View source
+        <button type="button" className={cx(btnSmall, 'hidden text-xs text-[#5f6368] sm:inline-flex')} onClick={() => setTab('source')}>
+          Source
         </button>
-        <button type="button" className={cx(btnSmall, 'hidden sm:inline-flex')} onClick={() => setTab('headers')}>
-          View headers
+        <button type="button" className={cx(btnSmall, 'hidden text-xs text-[#5f6368] sm:inline-flex')} onClick={() => setTab('headers')}>
+          Headers
         </button>
       </div>
 
       {detail.is_demo && <DemoBanner />}
 
-      <div className="space-y-5 px-4 py-4 sm:px-6">
-        {/* Subject + participants */}
-        <header className="space-y-3">
-          <div className="flex flex-wrap items-start gap-2">
-            <h1 id="reader-subject" className="min-w-0 flex-1 break-words text-xl font-semibold text-slate-900 dark:text-white">
-              {detail.subject || '(no subject)'}
-            </h1>
-            {detail.is_demo && <Badge tone="purple">Sample</Badge>}
-            {detail.in_trash && <Badge tone="neutral">In Trash</Badge>}
+      <div className="flex-1 px-6 py-5 sm:px-10">
+        {/* ── Subject ── */}
+        <div className="flex flex-wrap items-start gap-2 pb-3">
+          <h1
+            id="reader-subject"
+            className="min-w-0 flex-1 break-words text-2xl font-normal text-[#202124] dark:text-[#e3e3e3]"
+            style={{ fontFamily: "'Google Sans', sans-serif" }}
+          >
+            {detail.subject || '(no subject)'}
+          </h1>
+          {detail.is_demo && <Badge tone="purple">Sample</Badge>}
+          {detail.in_trash && <Badge tone="neutral">In Trash</Badge>}
+        </div>
+
+        {/* ── Sender row — Gmail style ── */}
+        <div className="mb-4 flex items-start gap-3 border-b border-[#e0e0e0] pb-4 dark:border-[#3c4043]">
+          {/* Avatar circle */}
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1A73E8] text-sm font-bold text-white dark:bg-[#004A77] dark:text-[#C2E7FF]"
+            aria-hidden="true"
+          >
+            {(detail.from?.name || detail.from?.address || '?').charAt(0).toUpperCase()}
           </div>
-          <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm">
-            <dt className="text-slate-600 dark:text-slate-400">From</dt>
-            <dd className="min-w-0">
-              <AddressView a={detail.from} />
-            </dd>
-            <dt className="text-slate-600 dark:text-slate-400">To</dt>
-            <dd className="min-w-0">
-              <AddressList list={detail.to} />
-            </dd>
-            {detail.cc.length > 0 && (
-              <>
-                <dt className="text-slate-600 dark:text-slate-400">Cc</dt>
-                <dd className="min-w-0">
-                  <AddressList list={detail.cc} />
-                </dd>
-              </>
-            )}
-            {detail.reply_to.length > 0 && (
-              <>
-                <dt className="text-slate-600 dark:text-slate-400">Reply-To</dt>
-                <dd className="min-w-0">
-                  <AddressList list={detail.reply_to} />
-                </dd>
-              </>
-            )}
-          </dl>
 
-          {/* Two clearly distinguished times */}
-          <div className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800/50 sm:grid-cols-2">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Received by M-Ai-L Box</div>
-              <div className="font-mono text-slate-900 dark:text-slate-100">{formatFull(detail.received_at)}</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400">Our server clock — reliable.</div>
+          <div className="min-w-0 flex-1">
+            {/* From line */}
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-medium text-[#202124] dark:text-[#e3e3e3]">
+                {detail.from?.name || detail.from?.address || '(unknown sender)'}
+              </span>
+              {detail.from?.name && (
+                <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                  &lt;{detail.from.address}&gt;
+                </span>
+              )}
+              <CopyButton text={detail.from?.address ?? ''} variant="icon" ariaLabel="Copy sender address" />
             </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Sender&rsquo;s Date header</div>
-              <div className="font-mono text-slate-900 dark:text-slate-100">{detail.sent_at ? formatFull(detail.sent_at) : 'Not provided'}</div>
-              <div className="text-xs text-slate-600 dark:text-slate-400">Set by the sender, may be inaccurate.</div>
+
+            {/* To line */}
+            <div className="mt-0.5 flex items-center gap-1 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+              <span>to</span>
+              {detail.to.map((a, i) => (
+                <span key={`${a.address}-${i}`}>{a.name || a.address}</span>
+              ))}
+              {detail.cc.length > 0 && (
+                <span>, cc: {detail.cc.map((a) => a.name || a.address).join(', ')}</span>
+              )}
+              {/* Expandable details link */}
+              <button
+                type="button"
+                className={cx('ml-1 inline-flex items-center gap-0.5 rounded text-[#5f6368] hover:text-[#202124] dark:hover:text-[#e3e3e3]', focusRing)}
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+              >
+                <IconChevronDown className={cx('h-3.5 w-3.5 transition-transform', showDetails && 'rotate-180')} />
+              </button>
             </div>
-            {delta && <div className="text-xs text-slate-700 dark:text-slate-300 sm:col-span-2">{delta}</div>}
+
+            {/* Expanded detail panel — hidden by default */}
+            {showDetails && (
+              <dl className="mt-3 grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 rounded-xl border border-[#e0e0e0] bg-[#f6f8fc] p-3 text-xs dark:border-[#3c4043] dark:bg-[#1f1f1f]">
+                {detail.from && (
+                  <>
+                    <dt className="text-[#5f6368]">From</dt>
+                    <dd className="break-all font-mono">{detail.from.name ? `${detail.from.name} <${detail.from.address}>` : detail.from.address}</dd>
+                  </>
+                )}
+                <dt className="text-[#5f6368]">To</dt>
+                <dd className="break-all font-mono">{detail.to.map((a) => a.name ? `${a.name} <${a.address}>` : a.address).join(', ') || '—'}</dd>
+                {detail.cc.length > 0 && (
+                  <>
+                    <dt className="text-[#5f6368]">Cc</dt>
+                    <dd className="break-all font-mono">{detail.cc.map((a) => a.address).join(', ')}</dd>
+                  </>
+                )}
+                {detail.reply_to.length > 0 && (
+                  <>
+                    <dt className="text-[#5f6368]">Reply-To</dt>
+                    <dd className="break-all font-mono">{detail.reply_to.map((a) => a.address).join(', ')}</dd>
+                  </>
+                )}
+                <dt className="text-[#5f6368]">Date</dt>
+                <dd className="font-mono">{formatFull(detail.received_at)}</dd>
+                {detail.message_id_header && (
+                  <>
+                    <dt className="text-[#5f6368]">Message-ID</dt>
+                    <dd className="break-all font-mono">{detail.message_id_header}</dd>
+                  </>
+                )}
+                <dt className="text-[#5f6368]">Size</dt>
+                <dd>{formatBytes(detail.size_bytes)}</dd>
+                <dt className="text-[#5f6368]">Delivered via</dt>
+                <dd>{detail.delivery_source}</dd>
+              </dl>
+            )}
           </div>
-        </header>
 
-        <QaPanel detail={detail} />
+          {/* Timestamp top-right */}
+          <time
+            dateTime={detail.received_at}
+            title={`Received ${formatFull(detail.received_at)}`}
+            className="shrink-0 text-xs text-[#5f6368] dark:text-[#9aa0a6]"
+          >
+            {formatFull(detail.received_at)}
+          </time>
+        </div>
 
+        {/* ── OTP Codes — inline pill, no section heading ── */}
+        {hasCodes && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {detail.otp_codes.map((c, i) => (
+              <div
+                key={`${c.code}-${i}`}
+                className="flex items-center gap-2 rounded-2xl border border-[#D3E3FD] bg-[#EAF1FB] px-4 py-2 dark:border-[#1a3a5c] dark:bg-[#1a3a5c]"
+              >
+                <span className="select-all font-mono text-xl font-bold tracking-[0.2em] text-[#1A73E8] dark:text-[#8ab4f8]">
+                  {c.code}
+                </span>
+                <CopyButton text={c.code} label="Copy" ariaLabel={`Copy code ${c.code}`} />
+              </div>
+            ))}
+            <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Verification code detected</span>
+          </div>
+        )}
+
+        {/* ── Links — simple chip list, no heading ── */}
+        {hasLinks && (
+          <div className="mb-4 space-y-1">
+            {detail.links.map((l, i) => (
+              <div key={`${l.url}-${i}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#f6f8fc] dark:hover:bg-[#37393b]">
+                <IconLink className="h-4 w-4 shrink-0 text-[#1A73E8] dark:text-[#8ab4f8]" />
+                <div className="min-w-0 flex-1">
+                  {l.text && <span className="mr-2 text-sm font-medium text-[#202124] dark:text-[#e3e3e3]">{l.text}</span>}
+                  <span className="break-all font-mono text-xs text-[#5f6368] dark:text-[#9aa0a6]">{l.url}</span>
+                </div>
+                <CopyButton text={l.url} label="Copy" ariaLabel={`Copy link ${l.url}`} />
+                <a
+                  className={cx(btnSmall, 'text-xs')}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  aria-label={`Open: ${l.url}`}
+                >
+                  <IconExternal className="h-3.5 w-3.5" />
+                  Open
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Attachments ── */}
         {visibleAttachments.length > 0 && (
-          <section aria-labelledby="att-heading">
-            <h2 id="att-heading" className="mb-2 text-sm font-semibold text-slate-900 dark:text-white">
-              Attachments ({visibleAttachments.length})
+          <section aria-labelledby="att-heading" className="mb-4">
+            <h2 id="att-heading" className="mb-2 text-sm font-medium text-[#5f6368] dark:text-[#9aa0a6]">
+              {visibleAttachments.length} attachment{visibleAttachments.length > 1 ? 's' : ''}
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visibleAttachments.map((a) => (
@@ -340,32 +432,29 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
           </section>
         )}
 
-        {/* Body */}
+        {/* ── Body tabs — small and unobtrusive ── */}
         <section aria-label="Message body">
-          <div role="tablist" aria-label="Message view" className="mb-3 inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-            {tabs
-              .filter((t) => t.show)
-              .map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  id={`tab-${t.id}`}
-                  aria-selected={tab === t.id}
-                  aria-controls="message-tabpanel"
-                  onClick={() => setTab(t.id)}
-                  className={cx(
-                    'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium',
-                    focusRing,
-                    tab === t.id
-                      ? 'bg-white text-slate-900 shadow dark:bg-slate-700 dark:text-white'
-                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white',
-                  )}
-                >
-                  {t.icon}
-                  {t.label}
-                </button>
-              ))}
+          <div role="tablist" aria-label="Message view" className="mb-3 flex gap-1 border-b border-[#e0e0e0] dark:border-[#3c4043]">
+            {tabs.filter((t) => t.show).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                id={`tab-${t.id}`}
+                aria-selected={tab === t.id}
+                aria-controls="message-tabpanel"
+                onClick={() => setTab(t.id)}
+                className={cx(
+                  'inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors',
+                  focusRing,
+                  tab === t.id
+                    ? 'border-[#1A73E8] font-medium text-[#1A73E8] dark:text-[#8ab4f8]'
+                    : 'border-transparent text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6] dark:hover:text-[#e3e3e3]',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           <div id="message-tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
@@ -374,27 +463,21 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
                 html={html && html.remote === remoteImages ? html.body : null}
                 error={htmlError}
                 onLoadRemote={() => setRemoteImages(true)}
-                onRetry={() => {
-                  setHtml(null);
-                  setHtmlError(null);
-                  setHtmlAttempt((n) => n + 1);
-                }}
+                onRetry={() => { setHtml(null); setHtmlError(null); setHtmlAttempt((n) => n + 1); }}
               />
             )}
             {tab === 'text' &&
               (detail.text_body ? (
-                <pre className="whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-white p-4 font-mono text-[13px] leading-relaxed text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                <pre className="whitespace-pre-wrap break-words rounded-xl border border-[#e0e0e0] bg-[#f6f8fc] p-5 font-mono text-[13px] leading-relaxed text-[#202124] dark:border-[#3c4043] dark:bg-[#1f1f1f] dark:text-[#e3e3e3]">
                   {detail.text_body}
                 </pre>
               ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-400">This message has no plain-text content.</p>
+                <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">This message has no plain-text content.</p>
               ))}
             {tab === 'headers' && <HeadersView detail={detail} />}
             {tab === 'source' && <SourceView raw={raw} error={rawError} onRetry={() => setRaw(null)} onDownload={() => void downloadEml()} />}
           </div>
         </section>
-
-        <TechnicalDetails detail={detail} />
       </div>
 
       {attachmentActions.previewModal}
@@ -418,102 +501,16 @@ export const MessageReader = forwardRef<ReaderHandle, ReaderProps>(function Mess
   );
 });
 
-function AddressView({ a }: { a: Address | null }) {
-  if (!a) return <span className="text-slate-500">(unknown sender)</span>;
-  return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-x-1.5">
-      {a.name && <span className="font-semibold text-slate-900 dark:text-white">{a.name}</span>}
-      <span className={cx('break-all font-mono text-xs', a.name ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100')}>
-        {a.name ? `<${a.address}>` : a.address}
-      </span>
-      <CopyButton text={a.address} variant="icon" ariaLabel={`Copy address ${a.address}`} />
-    </span>
-  );
-}
-
-function AddressList({ list }: { list: Address[] }) {
-  if (list.length === 0) return <span className="text-slate-500">—</span>;
-  return (
-    <ul className="space-y-0.5">
-      {list.map((a, i) => (
-        <li key={`${a.address}-${i}`}>
-          <AddressView a={a} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function QaPanel({ detail }: { detail: MessageDetail }) {
-  const codes = detail.otp_codes;
-  const links = detail.links;
-  const empty = codes.length === 0 && links.length === 0;
-  return (
-    <details open={!empty} className="group rounded-xl border border-slate-200 dark:border-slate-700">
-      <summary className={cx('flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold', focusRing)}>
-        <IconChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
-        Testing helpers
-        <span className="font-normal text-slate-600 dark:text-slate-400">
-          {empty ? '— no codes or links found' : `— ${codes.length} code${codes.length === 1 ? '' : 's'}, ${links.length} link${links.length === 1 ? '' : 's'}`}
-        </span>
-      </summary>
-      {!empty && (
-        <div className="space-y-4 border-t border-slate-200 px-4 py-3 dark:border-slate-700">
-          {codes.length > 0 && (
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Codes found</h3>
-              <ul className="flex flex-wrap gap-3">
-                {codes.map((c, i) => (
-                  <li key={`${c.code}-${i}`} className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 dark:border-indigo-800 dark:bg-indigo-950/50">
-                    <div className="flex items-center gap-3">
-                      <span className="select-all font-mono text-2xl font-bold tracking-[0.2em] text-indigo-950 dark:text-indigo-100">{c.code}</span>
-                      <CopyButton text={c.code} label="Copy" ariaLabel={`Copy code ${c.code}`} />
-                    </div>
-                    {c.context && <p className="mt-1 max-w-xs truncate text-xs text-slate-600 dark:text-slate-400" title={c.context}>{c.context}</p>}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">Detected automatically. The original message is unchanged.</p>
-            </div>
-          )}
-          {links.length > 0 && (
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Links in this message</h3>
-              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
-                {links.map((l, i) => (
-                  <li key={`${l.url}-${i}`} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
-                    <IconLink className="h-4 w-4 shrink-0 text-slate-500" />
-                    <div className="min-w-0 flex-1">
-                      {l.text && <div className="truncate font-medium text-slate-900 dark:text-white">{l.text}</div>}
-                      <div className="break-all font-mono text-xs text-slate-600 dark:text-slate-400">{l.url}</div>
-                    </div>
-                    <CopyButton text={l.url} label="Copy" ariaLabel={`Copy link ${l.url}`} />
-                    <a className={btnSmall} href={l.url} target="_blank" rel="noopener noreferrer nofollow" aria-label={`Open link in a new tab: ${l.url}`}>
-                      <IconExternal className="h-3.5 w-3.5" />
-                      Open
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">Links are never opened automatically. &ldquo;Open&rdquo; uses a new tab without sharing where you came from.</p>
-            </div>
-          )}
-        </div>
-      )}
-    </details>
-  );
-}
-
 function HtmlBodyView({ html, error, onLoadRemote, onRetry }: { html: HtmlBody | null; error: string | null; onLoadRemote: () => void; onRetry: () => void }) {
   if (error) return <ErrorBanner message={error} onRetry={onRetry} />;
   if (!html) {
     return (
-      <div className="flex h-40 items-center justify-center text-slate-500">
+      <div className="flex h-40 items-center justify-center text-[#5f6368]">
         <Spinner className="h-5 w-5" label="Loading message" />
       </div>
     );
   }
-  if (html.html === null) return <p className="text-sm text-slate-600 dark:text-slate-400">This message has no HTML version.</p>;
+  if (html.html === null) return <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">This message has no HTML version.</p>;
   return (
     <div className="space-y-2">
       {html.blocked_remote_images > 0 && !html.remote_images_loaded && (
@@ -528,8 +525,7 @@ function HtmlBodyView({ html, error, onLoadRemote, onRetry }: { html: HtmlBody |
           </div>
         </InfoBanner>
       )}
-      {/* Rendered ONLY inside a sandboxed iframe: no scripts, no same-origin access. */}
-      <div className="h-[70vh] min-h-[60vh] resize-y overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700">
+      <div className="h-[70vh] min-h-[60vh] resize-y overflow-hidden rounded-xl border border-[#e0e0e0] bg-white dark:border-[#3c4043]">
         <iframe
           sandbox="allow-popups allow-popups-to-escape-sandbox"
           srcDoc={html.html}
@@ -538,32 +534,32 @@ function HtmlBodyView({ html, error, onLoadRemote, onRetry }: { html: HtmlBody |
           className="h-full w-full border-0 bg-white"
         />
       </div>
-      <p className="text-xs text-slate-600 dark:text-slate-400">Drag the bottom-right corner to resize. Scripts in e-mails are always disabled.</p>
+      <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Drag the bottom-right corner to resize. Scripts in e-mails are always disabled.</p>
     </div>
   );
 }
 
 function HeadersView({ detail }: { detail: MessageDetail }) {
   const all = detail.headers.map((h) => `${h.name}: ${h.value}`).join('\n');
-  if (detail.headers.length === 0) return <p className="text-sm text-slate-600 dark:text-slate-400">No headers available.</p>;
+  if (detail.headers.length === 0) return <p className="text-sm text-[#5f6368] dark:text-[#9aa0a6]">No headers available.</p>;
   return (
     <div>
       <div className="mb-2 flex justify-end">
         <CopyButton text={all} label="Copy all headers" ariaLabel="Copy all headers" />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+      <div className="overflow-x-auto rounded-xl border border-[#e0e0e0] dark:border-[#3c4043]">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-slate-800">
+          <thead className="bg-[#f6f8fc] dark:bg-[#1f1f1f]">
             <tr>
-              <th scope="col" className="px-3 py-2 font-semibold">Name</th>
-              <th scope="col" className="px-3 py-2 font-semibold">Value</th>
+              <th scope="col" className="px-3 py-2 font-semibold text-[#202124] dark:text-[#e3e3e3]">Name</th>
+              <th scope="col" className="px-3 py-2 font-semibold text-[#202124] dark:text-[#e3e3e3]">Value</th>
             </tr>
           </thead>
           <tbody className="font-mono">
             {detail.headers.map((h, i) => (
-              <tr key={`${h.name}-${i}`} className="border-t border-slate-100 align-top dark:border-slate-800">
-                <td className="whitespace-nowrap px-3 py-1.5 font-semibold text-slate-800 dark:text-slate-200">{h.name}</td>
-                <td className="break-all px-3 py-1.5 text-slate-700 dark:text-slate-300">{h.value}</td>
+              <tr key={`${h.name}-${i}`} className="border-t border-[#f1f3f4] align-top dark:border-[#3c4043]">
+                <td className="whitespace-nowrap px-3 py-1.5 font-semibold text-[#444746] dark:text-[#c4c7c5]">{h.name}</td>
+                <td className="break-all px-3 py-1.5 text-[#5f6368] dark:text-[#9aa0a6]">{h.value}</td>
               </tr>
             ))}
           </tbody>
@@ -577,7 +573,7 @@ function SourceView({ raw, error, onRetry, onDownload }: { raw: RawSource | null
   if (error) return <ErrorBanner message={error} onRetry={onRetry} />;
   if (!raw) {
     return (
-      <div className="flex h-40 items-center justify-center text-slate-500">
+      <div className="flex h-40 items-center justify-center text-[#5f6368]">
         <Spinner className="h-5 w-5" label="Loading source" />
       </div>
     );
@@ -585,7 +581,7 @@ function SourceView({ raw, error, onRetry, onDownload }: { raw: RawSource | null
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-slate-600 dark:text-slate-400">Original size {formatBytes(raw.size_bytes)}</span>
+        <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Original size {formatBytes(raw.size_bytes)}</span>
         <span className="flex-1" />
         <CopyButton text={raw.raw} label="Copy source" ariaLabel="Copy message source" />
         <button type="button" className={btnSmall} onClick={onDownload}>
@@ -594,36 +590,9 @@ function SourceView({ raw, error, onRetry, onDownload }: { raw: RawSource | null
         </button>
       </div>
       {raw.truncated && <InfoBanner tone="warn">Only the first part of this large message is shown. Download the .eml file for the full source.</InfoBanner>}
-      <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-all rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+      <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[#e0e0e0] bg-[#f6f8fc] p-3 font-mono text-xs text-[#202124] dark:border-[#3c4043] dark:bg-[#1f1f1f] dark:text-[#e3e3e3]">
         {raw.raw}
       </pre>
     </div>
-  );
-}
-
-function TechnicalDetails({ detail }: { detail: MessageDetail }) {
-  const rows: Array<[string, string]> = [
-    ['Envelope from', detail.envelope_from ?? '—'],
-    ['Envelope to', detail.envelope_to.join(', ') || '—'],
-    ['Message-ID', detail.message_id_header ?? '—'],
-    ['Delivered via', detail.delivery_source],
-    ['Size', formatBytes(detail.size_bytes)],
-    ['Internal ID', detail.id],
-  ];
-  return (
-    <details className="group rounded-xl border border-slate-200 text-sm dark:border-slate-700">
-      <summary className={cx('flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 font-semibold', focusRing)}>
-        <IconChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
-        Technical details
-      </summary>
-      <dl className="grid grid-cols-1 gap-x-4 gap-y-1 border-t border-slate-200 px-4 py-3 dark:border-slate-700 sm:grid-cols-[auto,1fr]">
-        {rows.map(([k, v]) => (
-          <div key={k} className="contents">
-            <dt className="text-slate-600 dark:text-slate-400">{k}</dt>
-            <dd className="break-all font-mono text-xs leading-5">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </details>
   );
 }
