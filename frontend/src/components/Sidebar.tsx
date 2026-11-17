@@ -17,6 +17,7 @@ import {
   IconPaperclip,
   IconPlus,
   IconShield,
+  IconSparkles,
   IconStar,
   IconTrash,
   IconUser,
@@ -27,9 +28,10 @@ import { focusRing, iconBtnSm } from './ui';
 interface SidebarProps {
   view: View;
   onNavigate: (view: View) => void;
+  collapsed?: boolean;
 }
 
-export function Sidebar({ view, onNavigate }: SidebarProps) {
+export function Sidebar({ view, onNavigate, collapsed = false }: SidebarProps) {
   const config = useConfig();
   const { signedIn, isAdmin } = useSession();
   const { active } = useMailboxes();
@@ -46,17 +48,24 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
           onNavigate(v);
         }}
         aria-current={view === v ? 'page' : undefined}
+        title={collapsed ? text : undefined}
         className={cx(
-          'flex items-center gap-4 rounded-r-full py-1.5 pl-4 pr-4 text-sm font-medium transition-colors',
+          'flex items-center rounded-r-full py-1.5 transition-colors',
           focusRing,
+          collapsed ? 'justify-center px-0 mx-2 rounded-full h-10 w-10' : 'gap-4 pl-4 pr-4 text-sm font-medium',
           view === v
             ? 'bg-[#D3E3FD] text-[#001D35] dark:bg-[#004A77] dark:text-[#C2E7FF]'
             : 'text-[#202124] hover:bg-[#e8eaed] dark:text-[#e3e3e3] dark:hover:bg-[#3c4043]',
         )}
       >
-        <span className="shrink-0 text-[#444746] dark:text-[#9aa0a6]">{icon}</span>
-        <span className="flex-1" style={{ fontFamily: "'Google Sans', sans-serif" }}>{text}</span>
-        {count !== undefined && count > 0 && (
+        <span className="shrink-0 text-[#444746] dark:text-[#9aa0a6] relative">
+          {icon}
+          {collapsed && count !== undefined && count > 0 && (
+            <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-[#1A73E8]" />
+          )}
+        </span>
+        {!collapsed && <span className="flex-1" style={{ fontFamily: "'Google Sans', sans-serif" }}>{text}</span>}
+        {!collapsed && count !== undefined && count > 0 && (
           <span
             className="text-xs font-semibold text-[#202124] dark:text-[#e3e3e3]"
             aria-label={`${count} unread`}
@@ -71,19 +80,21 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
   return (
     <nav aria-label="Main" className="flex h-full flex-col overflow-y-auto pb-4 bg-[#f6f8fc] dark:bg-[#1f1f1f]">
       {/* Compose / Create button — Gmail pill style */}
-      <div className="px-2 pt-4 pb-2">
+      <div className={cx('pt-4 pb-2', collapsed ? 'flex justify-center px-1' : 'px-2')}>
         <button
           type="button"
           onClick={ui.openCreate}
+          title="Create new mailbox"
           className={cx(
-            'flex items-center gap-3 rounded-2xl bg-[#C2E7FF] px-5 py-4 text-sm font-medium text-[#001D35] shadow-md transition-all hover:bg-[#A8D7FF] hover:shadow-lg dark:bg-[#004A77] dark:text-[#C2E7FF] dark:hover:bg-[#005C8F]',
+            'flex items-center rounded-2xl bg-[#C2E7FF] text-[#001D35] shadow-md transition-all hover:bg-[#A8D7FF] hover:shadow-lg dark:bg-[#004A77] dark:text-[#C2E7FF] dark:hover:bg-[#005C8F]',
             focusRing,
+            collapsed ? 'h-12 w-12 justify-center p-0' : 'gap-3 px-5 py-4 text-sm font-medium',
           )}
         >
-          <IconPlus />
-          <span style={{ fontFamily: "'Google Sans', sans-serif" }}>Create new mailbox</span>
+          <IconPlus className="h-5 w-5" />
+          {!collapsed && <span style={{ fontFamily: "'Google Sans', sans-serif" }}>Create new mailbox</span>}
         </button>
-        {config.demo_mode && (
+        {!collapsed && config.demo_mode && (
           <button
             type="button"
             className={cx(
@@ -99,8 +110,9 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
       </div>
 
       {/* Primary nav */}
-      <ul className="mt-1 space-y-0.5 pr-3">
+      <ul className={cx('mt-1 space-y-1', !collapsed && 'pr-3')}>
         {nav('inbox', 'Inbox', <IconInbox />, unread)}
+        {nav('assistant', 'AI Assistant', <IconSparkles />)}
         {nav('starred', 'Starred', <IconStar />)}
         {nav('attachments', 'Attachments', <IconPaperclip />)}
         {nav('trash', 'Trash', <IconTrash />)}
@@ -108,7 +120,7 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
 
       {/* Account nav (signed-in only) */}
       {signedIn && (
-        <ul className="mt-2 space-y-0.5 border-t border-[#e0e0e0] pr-3 pt-2 dark:border-[#3c4043]">
+        <ul className={cx('mt-2 space-y-1 border-t border-[#e0e0e0] pt-2 dark:border-[#3c4043]', !collapsed && 'pr-3')}>
           {nav('files', 'My files', <IconFolder />)}
           {nav('api-keys', 'API keys', <IconKey />)}
           {nav('account', 'Account', <IconUser />)}
@@ -116,20 +128,22 @@ export function Sidebar({ view, onNavigate }: SidebarProps) {
         </ul>
       )}
 
-      <MailboxSwitcher />
+      {!collapsed && <MailboxSwitcher />}
 
       {/* Help link at bottom */}
-      <div className="mt-auto px-2 pt-4">
+      <div className={cx('mt-auto pt-4', collapsed ? 'flex justify-center px-1' : 'px-2')}>
         <button
           type="button"
+          title="How mailboxes work"
           className={cx(
-            'flex w-full items-center gap-3 rounded-full px-4 py-2 text-sm text-[#5f6368] hover:bg-[#e8eaed] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]',
+            'flex items-center text-[#5f6368] hover:bg-[#e8eaed] dark:text-[#9aa0a6] dark:hover:bg-[#3c4043]',
             focusRing,
+            collapsed ? 'h-10 w-10 justify-center rounded-full' : 'w-full gap-3 rounded-full px-4 py-2 text-sm',
           )}
           onClick={ui.openHelp}
         >
           <IconHelp className="h-4 w-4" />
-          How mailboxes work
+          {!collapsed && <span>How mailboxes work</span>}
         </button>
       </div>
     </nav>

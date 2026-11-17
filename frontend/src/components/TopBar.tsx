@@ -26,9 +26,10 @@ interface TopBarProps {
   onRefresh: () => void;
   refreshing: boolean;
   liveStatus: LiveStatus;
+  onToggleSidebar?: () => void;
 }
 
-export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefresh, refreshing, liveStatus }: TopBarProps) {
+export function TopBar({ onOpenDrawer, onToggleSidebar, search, onSearch, searchInputRef, onRefresh, refreshing, liveStatus }: TopBarProps) {
   const config = useConfig();
   const { theme, toggle } = useTheme();
   const ui = useUi();
@@ -64,12 +65,19 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
     <header className="bg-[#f6f8fc] dark:bg-[#1f1f1f]">
       {/* Main toolbar row */}
       <div className="flex items-center gap-1 px-2 py-2">
-        {/* Hamburger */}
+        {/* Hamburger — on desktop toggles collapse, on mobile opens drawer */}
         <button
           type="button"
-          className={cx(iconBtn, 'lg:hidden')}
-          onClick={onOpenDrawer}
-          aria-label="Open navigation menu"
+          className={cx(iconBtn, 'ml-1')}
+          onClick={() => {
+            if (window.innerWidth >= 1024 && onToggleSidebar) {
+              onToggleSidebar();
+            } else {
+              onOpenDrawer();
+            }
+          }}
+          aria-label="Main menu"
+          title="Main menu"
         >
           <IconMenu />
         </button>
@@ -90,13 +98,13 @@ export function TopBar({ onOpenDrawer, search, onSearch, searchInputRef, onRefre
               <img src="/logo-icon.png" alt="M-Ai-L Box Logo" className="h-9 w-auto object-contain shrink-0" />
             </a>
             <div className="flex flex-col justify-center">
-              <div className="flex items-center tracking-tight text-[22px] font-bold leading-none font-sans select-none">
+              <div className="flex items-center tracking-tight text-[18px] font-bold leading-none font-sans select-none">
                 <span className="text-[#0d1b3e] dark:text-white">M-</span>
                 <span className="text-[#0070f3] dark:text-[#2997ff]">Ai</span>
                 <span className="text-[#0d1b3e] dark:text-white">-L Box</span>
               </div>
               {config.tagline && (
-                <div className="mt-1 flex items-center whitespace-nowrap text-[11px] font-normal leading-none tracking-normal select-none">
+                <div className="mt-0.5 flex items-center whitespace-nowrap text-[9.5px] font-normal leading-none tracking-normal select-none">
                   <span className="text-slate-500 dark:text-slate-400">Built for&nbsp;</span>
                   <span className="font-medium text-[#0070f3] dark:text-[#38bdf8]">developers</span>
                   <span className="text-slate-500 dark:text-slate-400">.&nbsp;Ready for&nbsp;</span>
@@ -284,25 +292,19 @@ function LiveIndicator({ status }: { status: LiveStatus }) {
 }
 
 function ActiveAddressBar() {
-  const config = useConfig();
   const { active } = useMailboxes();
   const now = useNow(30_000);
   const ui = useUi();
   if (!active) return null;
   const exp = expiryInfo(active.expires_at, now);
-  const retention = active.saved
-    ? config.saved_message_retention_days > 0
-      ? `Saved to your account · messages kept ${config.saved_message_retention_days} days`
-      : 'Saved to your account · messages kept until you delete them'
-    : `Temporary mailbox · deleted with all messages when it expires`;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[#e0e0e0] bg-white px-4 py-2 dark:border-[#3c4043] dark:bg-[#2d2e30] sm:px-5">
-      <div className="flex min-w-0 max-w-full items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-[#e0e0e0] bg-[#fdfdfd] px-4 py-1 dark:border-[#333538] dark:bg-[#252628] sm:px-6">
+      <div className="flex min-w-0 items-center gap-2">
         <span className="sr-only">Active address:</span>
         <span
           className={cx(
-            'min-w-0 truncate font-mono text-base font-semibold sm:text-lg',
+            'min-w-0 truncate font-mono text-xs sm:text-sm font-medium',
             active.gone ? 'text-[#9aa0a6] line-through' : 'text-[#202124] dark:text-[#e3e3e3]',
           )}
           title={active.address}
@@ -312,12 +314,17 @@ function ActiveAddressBar() {
         <CopyButton text={active.address} label="Copy" ariaLabel="Copy e-mail address" />
         <MailboxSettingsMenu key={active.id} mailbox={active} />
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+      <div className="flex min-w-0 items-center gap-x-2.5 text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">
         {active.label && <span className="font-medium text-[#202124] dark:text-[#e3e3e3]">{active.label}</span>}
+        {active.is_demo && (
+          <span className="rounded bg-fuchsia-100 px-1.5 py-0.2 font-medium text-fuchsia-700 dark:bg-fuchsia-950/60 dark:text-fuchsia-300">
+            Demo
+          </span>
+        )}
         {active.gone ? (
-          <span className="font-semibold text-red-600 dark:text-red-400">Expired or removed</span>
+          <span className="font-semibold text-red-600 dark:text-red-400">Expired</span>
         ) : active.saved ? (
-          <span>No expiry</span>
+          <span>Permanent</span>
         ) : (
           <span
             className={cx(exp.soon || exp.expired ? 'font-semibold text-amber-700 dark:text-amber-400' : undefined)}
@@ -326,11 +333,12 @@ function ActiveAddressBar() {
             {exp.text}
           </span>
         )}
-        <span className="hidden sm:inline">{retention}</span>
-        <span className="hidden md:inline">Trash emptied after {config.trash_retention_days} days</span>
-        {active.is_demo && <span className="font-semibold text-fuchsia-700 dark:text-fuchsia-400">Demo mailbox</span>}
-        <button type="button" className={cx('rounded text-[#1A73E8] underline-offset-2 hover:underline dark:text-[#8ab4f8]', focusRing)} onClick={ui.openHelp}>
-          How it works
+        <button
+          type="button"
+          className={cx('rounded text-[#1A73E8] hover:underline dark:text-[#8ab4f8]', focusRing)}
+          onClick={ui.openHelp}
+        >
+          Help
         </button>
       </div>
     </div>

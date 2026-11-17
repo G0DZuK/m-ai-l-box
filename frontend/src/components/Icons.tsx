@@ -44,6 +44,18 @@ export const IconInbox = (p: IconProps) => (
     <path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5h-4.5l-1.5 2.5h-4L8.5 13H4z" />
   </Svg>
 );
+export const IconSparkles = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 7.92c0 .13 0 .261 0 .393a7.5 7.5 0 0 0-7.92 7.92c-.13 0-.261 0-.393 0a7.5 7.5 0 0 0-7.92-7.92c0-.132 0-.263 0-.393A7.5 7.5 0 0 0 12 3z" />
+  </Svg>
+);
+export const IconBot = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="11" width="18" height="10" rx="2" />
+    <circle cx="12" cy="5" r="2" />
+    <path d="M12 7v4M8 16h.01M16 16h.01" />
+  </Svg>
+);
 export const IconStar = ({ filled, ...p }: IconProps & { filled?: boolean }) => (
   <Svg {...p} fill={filled ? 'currentColor' : 'none'}>
     <path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.1 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.7l5.9-.9L12 3.5z" />

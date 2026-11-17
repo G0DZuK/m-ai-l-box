@@ -28,6 +28,8 @@ import { AccountView } from './views/AccountView';
 import { AdminView } from './views/AdminView';
 import { ApiKeysView } from './views/ApiKeysView';
 import { AttachmentsView } from './views/AttachmentsView';
+import { ClaudeChatView } from './views/ClaudeChatView';
+import { FloatingChatWidget } from './components/FloatingChatWidget';
 import { FilesView } from './views/FilesView';
 import { MailView } from './views/MailView';
 import { EMPTY_SEARCH, type SearchState } from './views/search';
@@ -88,6 +90,7 @@ function Shell() {
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
   const [keyPanel, setKeyPanel] = useState<{ mailbox: Mailbox; token: string; reason: KeyPanelReason } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [search, setSearch] = useState<SearchState>(EMPTY_SEARCH);
   const [manualTick, setManualTick] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -253,7 +256,9 @@ function Shell() {
 
   let content: JSX.Element;
   const view = route.view;
-  if (MAIL_VIEWS.includes(view)) {
+  if (view === 'assistant') {
+    content = <ClaudeChatView />;
+  } else if (MAIL_VIEWS.includes(view)) {
     content = active ? (
       <MailView
         key={active.id}
@@ -302,6 +307,7 @@ function Shell() {
         </a>
         <TopBar
           onOpenDrawer={() => setDrawerOpen(true)}
+          onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
           search={search}
           onSearch={onSearch}
           searchInputRef={searchInputRef}
@@ -310,8 +316,14 @@ function Shell() {
           liveStatus={live.status}
         />
         <div className="flex min-h-0 flex-1">
-          <aside className="hidden w-64 shrink-0 bg-[#f6f8fc] dark:bg-[#1f1f1f] lg:block" aria-label="Sidebar">
-            <Sidebar view={view} onNavigate={(v) => go(v)} />
+          <aside
+            className={cx(
+              'hidden shrink-0 bg-[#f6f8fc] transition-all duration-200 dark:bg-[#1f1f1f] lg:block',
+              sidebarCollapsed ? 'w-18' : 'w-64',
+            )}
+            aria-label="Sidebar"
+          >
+            <Sidebar view={view} onNavigate={(v) => go(v)} collapsed={sidebarCollapsed} />
           </aside>
           {drawerOpen && (
             <div className="fixed inset-0 z-40 lg:hidden">
@@ -362,6 +374,7 @@ function Shell() {
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       {config.accounts_enabled && <AuthDialog mode={authMode} onClose={() => setAuthMode(null)} onModeChange={setAuthMode} />}
       <KeyPanelDialog data={keyPanel} onClose={() => setKeyPanel(null)} />
+      <FloatingChatWidget />
     </UiContext.Provider>
   );
 }
