@@ -256,7 +256,9 @@ function Shell() {
 
   let content: JSX.Element;
   const view = route.view;
-  if (view === 'assistant') {
+  if (view === 'welcome') {
+    content = <WelcomeView />;
+  } else if (view === 'assistant') {
     content = <ClaudeChatView />;
   } else if (MAIL_VIEWS.includes(view)) {
     content = active ? (

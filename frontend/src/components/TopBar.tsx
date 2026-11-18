@@ -86,22 +86,30 @@ export function TopBar({ onOpenDrawer, onToggleSidebar, search, onSearch, search
         <div className="hidden shrink-0 items-center px-2 sm:flex">
           <div className="flex items-center gap-3">
             <a
-              href="#/inbox"
+              href="#/welcome"
               onClick={(e) => {
                 e.preventDefault();
-                ui.navigate('inbox');
+                ui.navigate('welcome');
               }}
               className="cursor-pointer outline-none transition-transform active:scale-95 py-0.5"
-              aria-label="Go to inbox"
+              aria-label="Go to home welcome page"
               title="M-Ai-L Box Home"
             >
               <img src="/logo-icon.png" alt="M-Ai-L Box Logo" className="h-9 w-auto object-contain shrink-0" />
             </a>
-            <div className="flex flex-col justify-center">
+            <a
+              href="#/welcome"
+              onClick={(e) => {
+                e.preventDefault();
+                ui.navigate('welcome');
+              }}
+              className="flex flex-col justify-center cursor-pointer outline-none group text-left"
+              title="M-Ai-L Box Home"
+            >
               <div className="flex items-center tracking-tight text-[18px] font-bold leading-none font-sans select-none">
-                <span className="text-[#0d1b3e] dark:text-white">M-</span>
+                <span className="text-[#0d1b3e] dark:text-white group-hover:opacity-80">M-</span>
                 <span className="text-[#0070f3] dark:text-[#2997ff]">Ai</span>
-                <span className="text-[#0d1b3e] dark:text-white">-L Box</span>
+                <span className="text-[#0d1b3e] dark:text-white group-hover:opacity-80">-L Box</span>
               </div>
               {config.tagline && (
                 <div className="mt-0.5 flex items-center whitespace-nowrap text-[9.5px] font-normal leading-none tracking-normal select-none">
@@ -112,25 +120,33 @@ export function TopBar({ onOpenDrawer, onToggleSidebar, search, onSearch, search
                   <span className="text-slate-500 dark:text-slate-400">.</span>
                 </div>
               )}
-            </div>
+            </a>
           </div>
         </div>
 
         {/* Mobile logo + text */}
         <div className="flex items-center gap-2 sm:hidden">
           <a
-            href="#/inbox"
+            href="#/welcome"
             onClick={(e) => {
               e.preventDefault();
-              ui.navigate('inbox');
+              ui.navigate('welcome');
             }}
             className="cursor-pointer outline-none transition-transform active:scale-95"
-            aria-label="Go to inbox"
+            aria-label="Go to home welcome page"
             title="M-Ai-L Box Home"
           >
             <img src="/logo-icon.png" alt="M-Ai-L Box Logo" className="h-7 w-auto object-contain shrink-0" />
           </a>
-          <div className="flex flex-col justify-center">
+          <a
+            href="#/welcome"
+            onClick={(e) => {
+              e.preventDefault();
+              ui.navigate('welcome');
+            }}
+            className="flex flex-col justify-center cursor-pointer outline-none text-left"
+            title="M-Ai-L Box Home"
+          >
             <div className="flex items-center tracking-tight text-[17px] font-bold leading-none font-sans select-none">
               <span className="text-[#0d1b3e] dark:text-white">M-</span>
               <span className="text-[#0070f3] dark:text-[#2997ff]">Ai</span>
@@ -145,7 +161,7 @@ export function TopBar({ onOpenDrawer, onToggleSidebar, search, onSearch, search
                 <span className="text-slate-500 dark:text-slate-400">.</span>
               </div>
             )}
-          </div>
+          </a>
         </div>
 
         {/* Search bar — desktop */}
