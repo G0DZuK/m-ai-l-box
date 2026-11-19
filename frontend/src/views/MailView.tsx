@@ -520,11 +520,9 @@ export function MailView({ mailbox, folder, messageId, search, onClearSearch, re
           <div className="flex h-full items-center justify-center p-8 text-center text-sm text-slate-600 dark:text-slate-400">
             <div>
               <IconMail className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
-              <p>Select a message to read it.</p>
-              <p className="mt-1 text-xs">
-                Tip: use <kbd className="rounded border px-1 font-mono">j</kbd> / <kbd className="rounded border px-1 font-mono">k</kbd> to move and{' '}
-                <kbd className="rounded border px-1 font-mono">Enter</kbd> to open. Press <kbd className="rounded border px-1 font-mono">?</kbd> for all
-                shortcuts.
+              <p className="font-medium text-slate-700 dark:text-slate-300">Select an email to view its contents</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+                Incoming messages will appear here automatically. You can read emails, extract verification codes, download attachments, or check delivery speed in real time.
               </p>
             </div>
           </div>
